@@ -134,9 +134,11 @@ async def matchmaking(interaction: discord.Interaction, name1: str, name2: str, 
 
         team1_message = "\n".join(f"{player} - {assigned_civs[player].capitalize()}" for player in squadra1)
         team2_message = "\n".join(f"{player} - {assigned_civs[player].capitalize()}" for player in squadra2)
-
+        lista_mappa = ["terreste", "marittima"]
+        mappa_scelta = lista_mappa[random.randint(0, 1)]
         message = (
             "Matchmaking completato!\n\n"
+            f"Mappa : {mappa_scelta}"
             f"**Squadra 1** (Totale punti: {punti_squadra1}):\n{team1_message}\n\n"
             f"**Squadra 2** (Totale punti: {punti_squadra2}):\n{team2_message}"
         )
