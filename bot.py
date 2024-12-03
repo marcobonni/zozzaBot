@@ -37,6 +37,25 @@ c.execute('''
         PRIMARY KEY (username, civ)
     )
 ''')
+
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS mare_seeds (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        seed INTEGER NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+''')
+
+c.execute('''
+    CREATE TABLE IF NOT EXISTS terra_seeds (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        seed INTEGER NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+''')
+
+
 conn.commit()
 
 # Variabili globali per le squadre
@@ -247,6 +266,62 @@ async def allcivstats(interaction: discord.Interaction):
         await interaction.response.send_message(stats_message)
     else:
         await interaction.response.send_message("Nessuna statistica trovata per le civiltà.")
+
+
+@bot.tree.command(name="saveseed", description="Salva il seed della partita da riutilizzare in futuro")
+async def saveseed(interaction: discord.Interaction, seed: int, type: str):
+    try:
+        # Controlla che il seed sia di 8 cifre
+        if len(str(seed)) != 8:
+            await interaction.response.send_message("Il seed deve essere un numero di esattamente 8 cifre.", ephemeral=True)
+            return
+
+        # Controlla che il tipo sia valido
+        if type.lower() not in ["mare", "terra"]:
+            await interaction.response.send_message('Il tipo deve essere "mare" o "terra".', ephemeral=True)
+            return
+
+        # Determina la tabella corretta
+        table_name = "mare_seeds" if type.lower() == "mare" else "terra_seeds"
+
+        # Salva il seed nella tabella corrispondente
+        conn = sqlite3.connect("aoe4_tournament.db")
+        c = conn.cursor()
+        c.execute(f"INSERT INTO {table_name} (seed) VALUES (?)", (seed,))
+        conn.commit()
+        conn.close()
+
+        await interaction.response.send_message(f"Seed {seed} salvato con successo nella lista {type}!", ephemeral=True)
+
+    except Exception as e:
+        await interaction.response.send_message(f"Errore durante il salvataggio del seed: {str(e)}", ephemeral=True)
+
+@bot.tree.command(name="listseeds", description="Visualizza i seed salvati per mare o terra")
+async def listseeds(interaction: discord.Interaction, type: str):
+    try:
+        # Controlla che il tipo sia valido
+        if type.lower() not in ["mare", "terra"]:
+            await interaction.response.send_message('Il tipo deve essere "mare" o "terra".', ephemeral=True)
+            return
+
+        # Determina la tabella corretta
+        table_name = "mare_seeds" if type.lower() == "mare" else "terra_seeds"
+
+        # Recupera i seed dalla tabella corrispondente
+        conn = sqlite3.connect("aoe4_tournament.db")
+        c = conn.cursor()
+        c.execute(f"SELECT id, seed, timestamp FROM {table_name} ORDER BY id ASC")
+        seeds = c.fetchall()
+        conn.close()
+
+        if seeds:
+            seeds_list = "\n".join(f"ID: {seed[0]}, Seed: {seed[1]}, Salvato il: {seed[2]}" for seed in seeds)
+            await interaction.response.send_message(f"Seed salvati nella lista {type}:\n{seeds_list}")
+        else:
+            await interaction.response.send_message(f"Non ci sono seed salvati nella lista {type}.")
+    except Exception as e:
+        await interaction.response.send_message(f"Errore durante il recupero dei seed: {str(e)}")
+
 
 
 # Comando /massimi
