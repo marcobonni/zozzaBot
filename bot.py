@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import sqlite3
-import token
+from config import token
 # Configura il bot
 TOKEN = token # Sostituisci con il tuo vero token
 intents = discord.Intents.default()
@@ -138,7 +138,7 @@ async def matchmaking(interaction: discord.Interaction, name1: str, name2: str, 
         mappa_scelta = lista_mappa[random.randint(0, 1)]
         message = (
             "Matchmaking completato!\n\n"
-            f"Mappa : {mappa_scelta}"
+            f"Mappa : {mappa_scelta} \n\n"
             f"**Squadra 1** (Totale punti: {punti_squadra1}):\n{team1_message}\n\n"
             f"**Squadra 2** (Totale punti: {punti_squadra2}):\n{team2_message}"
         )
