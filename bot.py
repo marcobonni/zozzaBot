@@ -324,10 +324,10 @@ async def listseeds(interaction: discord.Interaction, type: str):
 
 
 
-# Comando /massimi
-@bot.tree.command(name="massimi", description="Invia un messaggio per svegliare @massimi25")
-async def massimi(interaction: discord.Interaction):
-    await interaction.response.send_message("massimi25 SVEGLIAAAAAAAAA")
+# Comando /sveglia
+@bot.tree.command(name="sveglia", description="Invia un messaggio per svegliare @massimi25")
+async def sveglia(interaction: discord.Interaction, nome: str):
+    await interaction.response.send_message(f"{nome} SVEGLIAAAAAAAAA")
 
 
 # Comando /test
