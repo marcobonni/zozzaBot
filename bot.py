@@ -4,6 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 import sqlite3
 from config import token
+from datetime import datetime
 # Configura il bot
 TOKEN = token # Sostituisci con il tuo vero token
 intents = discord.Intents.default()
@@ -330,18 +331,91 @@ async def sveglia(interaction: discord.Interaction, nome: str):
     await interaction.response.send_message(f"{nome} SVEGLIAAAAAAAAA")
 
 
+
+
+#Sezione Prenotazione
+
+# Variabile globale per tenere traccia delle prenotazioni
+prenotazioni = []  # Contiene i nomi degli utenti che hanno reagito
+prenotazione_message_id = None  # Salva l'ID del messaggio di prenotazione
+
+
+@bot.tree.command(name="prenotazione", description="Crea un messaggio di prenotazione per la ZozzaRoyale.")
+async def prenotazione(interaction: discord.Interaction, ora: str):
+    global prenotazione_message_id, prenotazione_ora
+    try:
+        # Salva l'ora specificata
+        prenotazione_ora = ora
+
+        # Invia il messaggio di prenotazione
+        message = await interaction.channel.send(
+            f"Prenotati alla ZozzaRoyale di oggi alle {ora}. Reagisci con 🐷 per partecipare!"
+        )
+        prenotazione_message_id = message.id  # Salva l'ID del messaggio per monitorare le reazioni
+
+        await message.add_reaction("🐷")  # Aggiungi automaticamente la reazione "pig face"
+        await interaction.response.send_message("Messaggio di prenotazione creato!", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"Errore durante la creazione della prenotazione: {str(e)}", ephemeral=True)
+
+
+async def on_reaction_add(reaction, user):
+    global prenotazioni, prenotazione_message_id
+
+    # Ignora le reazioni del bot stesso
+    if user.bot:
+        return
+
+    # Controlla che la reazione sia sul messaggio di prenotazione e che sia una "pig face"
+    if reaction.message.id == prenotazione_message_id and str(reaction.emoji) == "🐷":
+        now = datetime.now().strftime("%H:%M:%S")  # Salva l'ora attuale
+        if user.name not in [p[0] for p in prenotazioni]:  # Controlla che il nome non sia già nella lista
+            prenotazioni.append((user.name, now))  # Salva il nome e l'ora
+            print(f"{user.name} si è prenotato alle {now}!")  # Debug
+
+@bot.event
+async def on_reaction_remove(reaction, user):
+    global prenotazioni, prenotazione_message_id
+
+    # Ignora le reazioni del bot stesso
+    if user.bot:
+        return
+
+    # Controlla che la reazione sia sul messaggio di prenotazione e che sia una "pig face"
+    if reaction.message.id == prenotazione_message_id and str(reaction.emoji) == "🐷":
+        prenotazioni = [p for p in prenotazioni if p[0] != user.name]  # Rimuove il giocatore
+        print(f"{user.name} ha rimosso la reazione!")  # Debug
+
+
+
+@bot.tree.command(name="listaprenotati", description="Mostra la lista dei giocatori prenotati con l'ora della prenotazione.")
+async def listaprenotati(interaction: discord.Interaction):
+    global prenotazioni, prenotazione_ora
+
+    if not prenotazione_ora:
+        await interaction.response.send_message("Non è stata creata nessuna prenotazione.")
+        return
+
+    if prenotazioni:
+        # Aggiunge un indice numerico e l'ora accanto a ciascun giocatore
+        lista = "\n".join(f"{index + 1}. {name} - {time}" for index, (name, time) in enumerate(prenotazioni))
+        await interaction.response.send_message(
+            f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\n```\n{lista}\n```"
+        )
+    else:
+        await interaction.response.send_message(f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\nNessun giocatore si è ancora prenotato.")
+
+
+
 # Comando /test
 @bot.tree.command(name="test", description="Controlla lo stato del bot e la sua versione")
 async def test(interaction: discord.Interaction):
     await interaction.response.send_message(
-        "Il bot è online e funzionante! v0.4\n"
+        "Il bot è online e funzionante! v0.5\n"
         "- Modifiche apportate:\n"
-        "  1. Creato il comando `/statsplayer` per visualizzare le statistiche di un giocatore specifico.\n"
-        "  2. Creato il comando `/civstats` per visualizzare le statistiche di una specifica civiltà.\n"
-        "  3. Creato il comando `/allcivstats` per visualizzare le statistiche totali di tutte le civiltà.\n"
-        "  4. Migliorato il comando `/leaderboard` con un formato tabellare."
+        "Aggiunto sistema prenotazione\n"
+        "Modificato comando sveglia\n"
     )
-
 
 # Esegui il bot
 bot.run(TOKEN)
