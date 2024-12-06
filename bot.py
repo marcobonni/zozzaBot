@@ -416,14 +416,16 @@ async def listaprenotati(interaction: discord.Interaction):
 
         # Estrai i primi 8 prenotati per il matchmaking
         primi_otto = " ".join([name for name, time in prenotazioni[:8]])
+        comando_matchmaking = f"/matchmaking {primi_otto}"
 
         await interaction.response.send_message(
             f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\n```\n{lista_completa}\n```\n"
-            f"**Primi 8 giocatori per il matchmaking:**\n```\n{primi_otto}\n```"
+            f"**Copia-Incolla questo messaggio e mandalo in chat per far partire il matchmaking**\n```\n{comando_matchmaking}\n```"
         )
     else:
         # Se non ci sono prenotazioni, ma il comando /prenotazione è stato eseguito
         await interaction.response.send_message(f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\nNessun giocatore si è ancora prenotato.")
+
 
 # Comando /test
 @bot.tree.command(name="test", description="Controlla lo stato del bot e la sua versione")
