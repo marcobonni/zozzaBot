@@ -358,10 +358,10 @@ async def prenotazione(interaction: discord.Interaction, ora: str):
     except Exception as e:
         await interaction.response.send_message(f"Errore durante la creazione della prenotazione: {str(e)}", ephemeral=True)
 
-
+@bot.event
 async def on_reaction_add(reaction, user):
     global prenotazioni, prenotazione_message_id
-
+    print(f"Reazione aggiunta da {user.name} sul messaggio ID {reaction.message.id} con emoji {reaction.emoji}")
     # Ignora le reazioni del bot stesso
     if user.bot:
         return
@@ -373,18 +373,27 @@ async def on_reaction_add(reaction, user):
             prenotazioni.append((user.name, now))  # Salva il nome e l'ora
             print(f"{user.name} si è prenotato alle {now}!")  # Debug
 
+
 @bot.event
 async def on_reaction_remove(reaction, user):
     global prenotazioni, prenotazione_message_id
-
+    print(f"Rimozione reazione: {user.name}, emoji: {reaction.emoji}, message ID: {reaction.message.id}")
+    print(f"Lista attuale dei prenotati: {prenotazioni}")
     # Ignora le reazioni del bot stesso
     if user.bot:
         return
 
     # Controlla che la reazione sia sul messaggio di prenotazione e che sia una "pig face"
     if reaction.message.id == prenotazione_message_id and str(reaction.emoji) == "🐷":
-        prenotazioni = [p for p in prenotazioni if p[0] != user.name]  # Rimuove il giocatore
-        print(f"{user.name} ha rimosso la reazione!")  # Debug
+        # Trova e rimuovi l'utente dalla lista prenotazioni
+        initial_len = len(prenotazioni)  # Lunghezza iniziale della lista per debug
+        prenotazioni = [p for p in prenotazioni if p[0] != user.name]
+
+        # Verifica se qualcosa è stato rimosso
+        if len(prenotazioni) < initial_len:
+            print(f"{user.name} è stato rimosso dalla lista prenotati.")
+        else:
+            print(f"{user.name} non era nella lista prenotati, nessuna rimozione effettuata.")
 
 
 
@@ -392,26 +401,35 @@ async def on_reaction_remove(reaction, user):
 async def listaprenotati(interaction: discord.Interaction):
     global prenotazioni, prenotazione_ora
 
+    # Verifica se il comando /prenotazione è stato eseguito
     if not prenotazione_ora:
-        await interaction.response.send_message("Non è stata creata nessuna prenotazione.")
+        await interaction.response.send_message(
+            "Nessuna prenotazione attiva. Usa il comando `/prenotazione` per avviare una prenotazione.",
+            ephemeral=True
+        )
         return
 
+    # Se ci sono prenotazioni
     if prenotazioni:
-        # Aggiunge un indice numerico e l'ora accanto a ciascun giocatore
-        lista = "\n".join(f"{index + 1}. {name} - {time}" for index, (name, time) in enumerate(prenotazioni))
+        # Lista completa con indice e orario
+        lista_completa = "\n".join(f"{index + 1}. {name} - {time}" for index, (name, time) in enumerate(prenotazioni))
+
+        # Estrai i primi 8 prenotati per il matchmaking
+        primi_otto = " ".join([name for name, time in prenotazioni[:8]])
+
         await interaction.response.send_message(
-            f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\n```\n{lista}\n```"
+            f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\n```\n{lista_completa}\n```\n"
+            f"**Primi 8 giocatori per il matchmaking:**\n```\n{primi_otto}\n```"
         )
     else:
+        # Se non ci sono prenotazioni, ma il comando /prenotazione è stato eseguito
         await interaction.response.send_message(f"**Giocatori prenotati per la partita delle {prenotazione_ora}:**\nNessun giocatore si è ancora prenotato.")
-
-
 
 # Comando /test
 @bot.tree.command(name="test", description="Controlla lo stato del bot e la sua versione")
 async def test(interaction: discord.Interaction):
     await interaction.response.send_message(
-        "Il bot è online e funzionante! v0.5\n"
+        "Il bot è online e funzionante! v0.5.2d\n"
         "- Modifiche apportate:\n"
         "Aggiunto sistema prenotazione\n"
         "Modificato comando sveglia\n"
